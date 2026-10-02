@@ -1,0 +1,6 @@
+{
+  "name": "Crypto Hub Investments",
+  "description": "Professional digital-asset and cryptocurrency financial technology platform combining market intelligence, portfolio management, investor education, and client account management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
