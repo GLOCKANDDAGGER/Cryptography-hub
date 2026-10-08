@@ -21,38 +21,60 @@ export const AuthModal: React.FC = () => {
 
   // Register form states
   const [regName, setRegName] = useState('');
+  const [regUsername, setRegUsername] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regPhone, setRegPhone] = useState('');
+  const [promoCode, setPromoCode] = useState('');
   const [registrationSubmitted, setRegistrationSubmitted] = useState<string | null>(null);
+
+  // Loading states
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!authModalOpen) return null;
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!usernameOrEmail) return;
     setAuthError(null);
+    setIsSubmitting(true);
 
-    const result = login(usernameOrEmail, password);
-    if (result.success) {
-      setAuthModalOpen(false);
-      setUsernameOrEmail('');
-      setPassword('');
-    } else {
-      setAuthError(result.message || 'Authentication failed. Please verify credentials.');
+    try {
+      const result = await login(usernameOrEmail, password);
+      if (result.success) {
+        setAuthModalOpen(false);
+        setUsernameOrEmail('');
+        setPassword('');
+      } else {
+        setAuthError(result.message || 'Authentication failed. Please verify credentials.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!regName || !regEmail) return;
     setAuthError(null);
+    setIsSubmitting(true);
 
-    const result = registerClient(regName, regEmail, regPassword || 'password123', regPhone);
-    if (result.success) {
-      setRegistrationSubmitted(regEmail);
-    } else {
-      setAuthError(result.message);
+    try {
+      const result = await registerClient(
+        regName,
+        regEmail,
+        regPassword || 'password123',
+        regPhone,
+        promoCode,
+        regUsername
+      );
+      if (result.success) {
+        setRegistrationSubmitted(regEmail);
+      } else {
+        setAuthError(result.message);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -206,6 +228,17 @@ export const AuthModal: React.FC = () => {
             </div>
 
             <div className="space-y-1">
+              <label className="text-slate-300 font-medium">Username (Optional / Sign In Identifier)</label>
+              <input
+                type="text"
+                value={regUsername}
+                onChange={(e) => setRegUsername(e.target.value)}
+                placeholder="e.g. alexia_roy"
+                className="w-full px-3.5 py-2.5 bg-[#080B11] border border-slate-800 rounded text-sm text-white focus:outline-hidden focus:border-[#FFA000]"
+              />
+            </div>
+
+            <div className="space-y-1">
               <label className="text-slate-300 font-medium">Corporate or Individual Email</label>
               <input
                 type="email"
@@ -237,6 +270,20 @@ export const AuthModal: React.FC = () => {
                 onChange={(e) => setRegPhone(e.target.value)}
                 placeholder="+1 (617) 555-0100"
                 className="w-full px-3.5 py-2.5 bg-[#080B11] border border-slate-800 rounded text-sm text-white focus:outline-hidden focus:border-[#FFA000]"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <label className="text-slate-300 font-medium">Promotional Code (Optional)</label>
+                <span className="text-[10px] font-mono text-[#FFA000]">Use code: CRYPTOHUB26 ($100 Bonus)</span>
+              </div>
+              <input
+                type="text"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                placeholder="e.g. CRYPTOHUB26"
+                className="w-full px-3.5 py-2.5 bg-[#080B11] border border-slate-800 rounded text-sm text-white font-mono uppercase focus:outline-hidden focus:border-[#FFA000]"
               />
             </div>
 

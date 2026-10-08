@@ -20,25 +20,38 @@ export const ClientAuthGate: React.FC = () => {
   const [regPhone, setRegPhone] = useState('');
   const [regSubmitted, setRegSubmitted] = useState<string | null>(null);
 
-  const handleLogin = (e: React.FormEvent) => {
+  // Loading state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
     setAuthError(null);
-    const result = login(email, password);
-    if (!result.success) {
-      setAuthError(result.message || 'Authentication failed. Please check credentials.');
+    setIsSubmitting(true);
+    try {
+      const result = await login(email, password);
+      if (!result.success) {
+        setAuthError(result.message || 'Authentication failed. Please check credentials.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!regName || !regEmail) return;
     setAuthError(null);
-    const result = registerClient(regName, regEmail, regPassword || 'password123', regPhone);
-    if (result.success) {
-      setRegSubmitted(regEmail);
-    } else {
-      setAuthError(result.message);
+    setIsSubmitting(true);
+    try {
+      const result = await registerClient(regName, regEmail, regPassword || 'password123', regPhone);
+      if (result.success) {
+        setRegSubmitted(regEmail);
+      } else {
+        setAuthError(result.message);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

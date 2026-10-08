@@ -13,6 +13,10 @@ import {
   ActiveSession,
   ThemeMode,
   AppointmentRecord,
+  ActiveInvestment,
+  AppNotification,
+  WithdrawalRequest,
+  CryptoNewsArticle,
 } from '../types';
 import { COMPANY_DETAILS, ASSETS } from '../constants/assets';
 
@@ -32,7 +36,7 @@ interface AppContextType {
   currentRole: UserRole;
   setCurrentRole: (role: UserRole) => void;
   isAuthenticated: boolean;
-  login: (usernameOrEmail: string, password: string) => { success: boolean; message?: string };
+  login: (usernameOrEmail: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
   activePage: string;
   setActivePage: (page: string) => void;
@@ -43,7 +47,7 @@ interface AppContextType {
 
   // Registered Users & Approval Workflow
   registeredUsers: RegisteredUser[];
-  registerClient: (name: string, email: string, password?: string, phone?: string) => { success: boolean; message: string };
+  registerClient: (name: string, email: string, password?: string, phone?: string, promoCode?: string, username?: string) => Promise<{ success: boolean; message: string }>;
   approveUser: (userId: string) => void;
   rejectUser: (userId: string) => void;
   updateClientBalance: (userId: string, newBalance: number) => void;
@@ -54,7 +58,14 @@ interface AppContextType {
   setDepositModalOpen: (open: boolean) => void;
   selectedDepositPlan: string;
   setSelectedDepositPlan: (plan: string) => void;
-  submitDepositRequest: (planName: string, amount: number, notes?: string) => void;
+  submitDepositRequest: (
+    planName: string,
+    amount: number,
+    notes?: string,
+    depositProofImage?: string,
+    txHash?: string,
+    btcAmount?: number
+  ) => Promise<TransactionRecord>;
 
   // User & Profile
   user: UserProfile;
@@ -66,6 +77,36 @@ interface AppContextType {
   portfolio: PortfolioSummary;
   rebalancePortfolio: (newHoldings: { symbol: string; percent: number }[]) => void;
   marketAssets: MarketAsset[];
+
+  // Active Investment Workflow ($250 Minimum)
+  activeInvestment: ActiveInvestment | null;
+  startInvestment: (planName: string, amount: number, strategy?: string) => Promise<{ success: boolean; message?: string }>;
+
+  // Interactive Notifications System
+  notifications: AppNotification[];
+  unreadNotificationsCount: number;
+  markNotificationAsRead: (id: string) => Promise<void>;
+  markAllNotificationsAsRead: () => Promise<void>;
+  notificationModalOpen: boolean;
+  setNotificationModalOpen: (open: boolean) => void;
+  selectedNotification: AppNotification | null;
+  setSelectedNotification: (notif: AppNotification | null) => void;
+
+  // Withdrawal System Workflow ($500 Minimum)
+  withdrawals: WithdrawalRequest[];
+  withdrawalModalOpen: boolean;
+  setWithdrawalModalOpen: (open: boolean) => void;
+  requestWithdrawal: (amount: number, destinationAddress: string, asset?: string, notes?: string) => Promise<{ success: boolean; message: string; meetsMinimum: boolean }>;
+
+  // Floating Crypto Hub AI Assistant
+  isAIAssistantOpen: boolean;
+  setIsAIAssistantOpen: (open: boolean) => void;
+
+  // Promo Code Validation
+  validatePromoCode: (code: string) => Promise<{ success: boolean; message?: string; campaign?: any }>;
+
+  // News Articles
+  newsArticles: CryptoNewsArticle[];
 
   // Transactions
   transactions: TransactionRecord[];
@@ -169,6 +210,21 @@ const initialMarketAssets: MarketAsset[] = [
 ];
 
 const initialTransactions: TransactionRecord[] = [
+  {
+    id: 'tx-ava-init',
+    date: '2026-10-06 09:30 EST',
+    type: 'DEPOSIT',
+    description: 'Custodial Deposit Settlement - Verified Capital Funding',
+    amount: 3700.0,
+    currency: 'USD',
+    status: 'COMPLETED',
+    referenceId: 'CHI-DEP-94102',
+    fee: 0,
+    destinationOrSource: 'Segregated Cold Storage Custodial Vault (1Hn5EATL...)',
+    clientEmail: 'alexia_roy@cryptohubinvestments.com',
+    clientName: 'Ava Addams',
+    btcAmount: 0.04433,
+  },
   {
     id: 'tx-1',
     date: '2026-09-24 14:32 EST',
@@ -412,6 +468,28 @@ const initialAuditLogs: AuditLogEntry[] = [
 
 const initialRegisteredUsers: RegisteredUser[] = [
   {
+    id: 'usr-ava-addams',
+    name: 'Ava Addams',
+    username: 'alexia_roy',
+    email: 'alexia_roy@cryptohubinvestments.com',
+    phone: '+1 (617) 555-0391',
+    role: 'CLIENT',
+    approvalStatus: 'APPROVED',
+    accountNumber: 'CHI-7721-8840-AA',
+    registeredDate: '2026-10-06',
+    portfolioValue: '$3,700.00',
+    numericBalance: 3700.0,
+    depositBalance: 3700.0,
+    promotionalBalance: 0.0,
+    availableBalance: 3700.0,
+    investedCapital: 0.0,
+    profitLoss: 0.0,
+    withdrawableBalance: 3700.0,
+    pendingWithdrawal: 0.0,
+    lastBalanceUpdate: '2026-10-06 09:30 EST',
+    jurisdiction: 'Massachusetts, US',
+  },
+  {
     id: 'usr-1',
     name: 'Marcus Vance',
     email: 'm.vance@institutional-asset.com',
@@ -548,10 +626,58 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showNotification('Appointment cancelled.');
   };
 
-  const [currentRole, setCurrentRole] = useState<UserRole>('CLIENT');
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>(initialRegisteredUsers);
-  const [activePage, setActivePage] = useState<string>('home');
+  const [currentRole, setCurrentRole] = useState<UserRole>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('chi_session');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.currentRole) return parsed.currentRole;
+        }
+      } catch (e) {}
+    }
+    return 'CLIENT';
+  });
+
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('chi_session');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          return !!parsed.isAuthenticated;
+        }
+      } catch (e) {}
+    }
+    return false;
+  });
+
+  const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('chi_registered_users');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {}
+    }
+    return initialRegisteredUsers;
+  });
+
+  const [activePage, setActivePage] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('chi_session');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.activePage) return parsed.activePage;
+        }
+      } catch (e) {}
+    }
+    return 'home';
+  });
+
   const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
   const [authModalTab, setAuthModalTab] = useState<'login' | 'register'>('login');
   const [notification, setNotification] = useState<string | null>(null);
@@ -560,21 +686,168 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [depositModalOpen, setDepositModalOpen] = useState<boolean>(false);
   const [selectedDepositPlan, setSelectedDepositPlan] = useState<string>('Starter Digital Strategy ($250 Min)');
 
-  const [user, setUser] = useState<UserProfile>({
-    id: 'usr-1',
-    name: 'Marcus Vance',
-    email: 'm.vance@institutional-asset.com',
-    role: 'CLIENT',
-    approvalStatus: 'APPROVED',
-    kycStatus: 'VERIFIED',
-    country: 'United States',
-    state: 'Massachusetts',
-    phone: '+1 (617) 555-0192',
-    accountNumber: 'CHI-8849-9210-MV',
-    memberSince: 'October 2024',
-    twoFactorEnabled: true,
-    assignedManagerId: 'mgr-ashley',
+  const [user, setUser] = useState<UserProfile>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('chi_session');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.user) return parsed.user;
+        }
+      } catch (e) {}
+    }
+    return {
+      id: 'usr-1',
+      name: 'Marcus Vance',
+      email: 'm.vance@institutional-asset.com',
+      role: 'CLIENT',
+      approvalStatus: 'APPROVED',
+      kycStatus: 'VERIFIED',
+      country: 'United States',
+      state: 'Massachusetts',
+      phone: '+1 (617) 555-0192',
+      accountNumber: 'CHI-8849-9210-MV',
+      memberSince: 'October 2024',
+      twoFactorEnabled: true,
+      assignedManagerId: 'mgr-ashley',
+    };
   });
+
+  // Cross-device synchronization engine
+  useEffect(() => {
+    let isSubscribed = true;
+
+    const syncWithBackend = async () => {
+      try {
+        const res = await fetch('/api/sync');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!isSubscribed) return;
+
+        if (data.users && Array.isArray(data.users)) {
+          setRegisteredUsers((prev) => {
+            const hasChanged = JSON.stringify(prev) !== JSON.stringify(data.users);
+            if (hasChanged) {
+              try {
+                localStorage.setItem('chi_registered_users', JSON.stringify(data.users));
+              } catch (e) {}
+              return data.users;
+            }
+            return prev;
+          });
+
+          // Sync current logged-in user authoritative balance and financial fields
+          setUser((currentUser) => {
+            const matched = data.users.find(
+              (u: any) =>
+                (currentUser.email && u.email?.toLowerCase() === currentUser.email.toLowerCase()) ||
+                (currentUser.username && u.username?.toLowerCase() === currentUser.username.toLowerCase()) ||
+                u.id === currentUser.id
+            );
+            if (matched) {
+              const updatedUser: UserProfile = {
+                ...currentUser,
+                ...matched,
+                role: currentUser.role,
+                balance: matched.numericBalance ?? currentUser.balance,
+                availableBalance: matched.availableBalance ?? matched.numericBalance ?? currentUser.availableBalance,
+                depositBalance: matched.depositBalance ?? currentUser.depositBalance,
+                promotionalBalance: matched.promotionalBalance ?? currentUser.promotionalBalance,
+                investedCapital: matched.investedCapital ?? currentUser.investedCapital,
+                profitLoss: matched.profitLoss ?? currentUser.profitLoss,
+                withdrawableBalance: matched.withdrawableBalance ?? currentUser.withdrawableBalance,
+                pendingWithdrawal: matched.pendingWithdrawal ?? currentUser.pendingWithdrawal,
+              };
+
+              // Update portfolio values to match database truth
+              const totalVal = matched.numericBalance ?? 0;
+              const availCash = matched.availableBalance ?? totalVal;
+              const invVal = matched.investedCapital ?? 0;
+
+              setPortfolio((prev) => ({
+                ...prev,
+                totalVerifiedValue: totalVal > 0 ? totalVal : prev.totalVerifiedValue,
+                availableCash: availCash > 0 ? availCash : prev.availableCash,
+                investedValue: invVal,
+              }));
+
+              try {
+                const s = localStorage.getItem('chi_session');
+                if (s) {
+                  const parsed = JSON.parse(s);
+                  localStorage.setItem('chi_session', JSON.stringify({ ...parsed, user: updatedUser }));
+                }
+              } catch (e) {}
+
+              return updatedUser;
+            }
+            return currentUser;
+          });
+        }
+
+        if (data.appointments && Array.isArray(data.appointments)) {
+          setAppointments(data.appointments);
+        }
+
+        if (data.activeInvestments && Array.isArray(data.activeInvestments)) {
+          const matchedInv = data.activeInvestments.find(
+            (inv: any) => (inv.userId === user.id || inv.userId === 'usr-1') && inv.status === 'ACTIVE'
+          ) || data.activeInvestments[0] || null;
+          setActiveInvestment(matchedInv);
+        }
+
+        if (data.notifications && Array.isArray(data.notifications)) {
+          const userNotifs = data.notifications.filter(
+            (n: any) => !n.userId || n.userId === user.id || n.userId === 'usr-1' || n.userId === 'usr-ava-addams'
+          );
+          setNotifications(userNotifs);
+        }
+
+        if (data.withdrawals && Array.isArray(data.withdrawals)) {
+          setWithdrawals(data.withdrawals);
+        }
+
+        if (data.news && Array.isArray(data.news)) {
+          setNewsArticles(data.news);
+        }
+
+        if (data.transactions && Array.isArray(data.transactions) && data.transactions.length > 0) {
+          setTransactions((prev) => {
+            const map = new Map<string, TransactionRecord>();
+            data.transactions.forEach((t: TransactionRecord) => map.set(t.id, t));
+            prev.forEach((t) => {
+              if (!map.has(t.id)) map.set(t.id, t);
+            });
+            return Array.from(map.values());
+          });
+        }
+      } catch (err) {
+        // Fallback gracefully to offline cache
+      }
+    };
+
+    // Initial sync
+    syncWithBackend();
+
+    // Auto-poll every 3.5 seconds to sync balances, investments, and notifications across devices
+    const interval = setInterval(syncWithBackend, 3500);
+
+    // Sync immediately when user switches tabs or focuses the window/phone screen
+    const handleFocus = () => syncWithBackend();
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') syncWithBackend();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      isSubscribed = false;
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [user.id, user.email, user.username]);
 
   const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([
     {
@@ -715,9 +988,118 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, []);
   const [transactions, setTransactions] = useState<TransactionRecord[]>(initialTransactions);
+  const [activeInvestment, setActiveInvestment] = useState<ActiveInvestment | null>(null);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [notificationModalOpen, setNotificationModalOpen] = useState<boolean>(false);
+  const [selectedNotification, setSelectedNotification] = useState<AppNotification | null>(null);
+  const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
+  const [withdrawalModalOpen, setWithdrawalModalOpen] = useState<boolean>(false);
+  const [isAIAssistantOpen, setIsAIAssistantOpen] = useState<boolean>(false);
+  const [newsArticles, setNewsArticles] = useState<CryptoNewsArticle[]>([]);
   const [tickets, setTickets] = useState<SupportTicket[]>(initialTickets);
   const [documents] = useState<DocumentRecord[]>(initialDocuments);
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>(initialAuditLogs);
+
+  const unreadNotificationsCount = notifications.filter((n) => !n.isRead).length;
+
+  const markNotificationAsRead = async (id: string) => {
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
+    try {
+      await fetch('/api/notifications/read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notificationId: id }),
+      });
+    } catch (e) {}
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    try {
+      await fetch('/api/notifications/read-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      showNotification('All notifications marked as read.');
+    } catch (e) {}
+  };
+
+  const startInvestment = async (planName: string, amount: number, strategy?: string) => {
+    try {
+      const res = await fetch('/api/investments/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          planName,
+          amount,
+          strategy,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        showNotification(data.message || 'Investment initiation failed.');
+        return { success: false, message: data.message };
+      }
+      setActiveInvestment(data.activeInvestment);
+      if (data.user) {
+        setUser((prev) => ({ ...prev, ...data.user }));
+        setPortfolio((prev) => ({
+          ...prev,
+          totalVerifiedValue: data.user.numericBalance ?? prev.totalVerifiedValue,
+          availableCash: data.user.availableBalance ?? prev.availableCash,
+          investedValue: data.user.investedCapital ?? (prev.investedValue + amount),
+        }));
+      }
+      showNotification(`Investment in ${planName} ($${amount.toLocaleString()}) activated!`);
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Network error.' };
+    }
+  };
+
+  const requestWithdrawal = async (amount: number, destinationAddress: string, asset?: string, notes?: string) => {
+    try {
+      const res = await fetch('/api/withdrawals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          userEmail: user.email,
+          userName: user.name,
+          amount,
+          destinationAddress,
+          asset: asset || 'Bitcoin / USD Wire',
+          notes,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        return { success: false, message: data.message, meetsMinimum: data.meetsMinimum ?? (amount >= 500) };
+      }
+      if (data.withdrawal) {
+        setWithdrawals((prev) => [data.withdrawal, ...prev]);
+      }
+      showNotification(`Withdrawal request for $${amount.toLocaleString()} submitted.`);
+      return { success: true, message: data.message, meetsMinimum: true };
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Network error submitting withdrawal.', meetsMinimum: amount >= 500 };
+    }
+  };
+
+  const validatePromoCode = async (code: string) => {
+    try {
+      const res = await fetch(`/api/promo/validate?code=${encodeURIComponent(code)}`);
+      const data = await res.json();
+      if (res.ok && data.success) {
+        return { success: true, campaign: data.campaign };
+      }
+      return { success: false, message: data.message || 'Invalid or expired promo code.' };
+    } catch (e) {
+      return { success: false, message: 'Could not validate promo code.' };
+    }
+  };
 
   const [ashleyMessages, setAshleyMessages] = useState([
     {
@@ -769,10 +1151,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showNotification(`Transaction ${newTx.referenceId} submitted for verified execution.`);
   };
 
-  const updateTransactionStatus = (id: string, status: TransactionRecord['status']) => {
+  const updateTransactionStatus = async (id: string, status: TransactionRecord['status']) => {
     setTransactions((prev) =>
       prev.map((t) => (t.id === id ? { ...t, status } : t))
     );
+    try {
+      await fetch(`/api/transactions/${id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+    } catch (e) {}
     addAuditLog(`Transaction Status Updated`, 'SUCCESS', `Tx ID ${id} set to ${status}`);
     showNotification(`Transaction updated to: ${status}`);
   };
@@ -883,59 +1272,108 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, 1200);
   };
 
-  const registerClient = (name: string, email: string, password = 'password123', phone = '') => {
+  const registerClient = async (
+    name: string,
+    email: string,
+    password = 'password123',
+    phone = '',
+    promoCode = '',
+    username = ''
+  ) => {
     const trimmedEmail = email.trim().toLowerCase();
+
+    // Check locally first for instant duplicate check
     const existing = registeredUsers.find((u) => u.email.toLowerCase() === trimmedEmail);
     if (existing) {
       return { success: false, message: 'An account with this email address already exists.' };
     }
 
-    const newUser: RegisteredUser = {
-      id: `usr-${Date.now()}`,
-      name: name.trim(),
-      email: trimmedEmail,
-      password,
-      phone,
-      role: 'CLIENT',
-      approvalStatus: 'PENDING_APPROVAL',
-      accountNumber: `CHI-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}-MV`,
-      registeredDate: new Date().toISOString().split('T')[0],
-      portfolioValue: '$0.00',
-      jurisdiction: 'Massachusetts, US',
-    };
-
-    setRegisteredUsers((prev) => [newUser, ...prev]);
-    addAuditLog('New client application submitted', 'SUCCESS', `${name} (${trimmedEmail}) - Pending Admin Review`);
-    showNotification('Registration application received. Awaiting administrator approval.');
-    return {
-      success: true,
-      message: 'Registration submitted successfully! Your account application has been submitted to the compliance administrator for approval. You will be able to log in once approved.',
-    };
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: trimmedEmail,
+          password,
+          phone,
+          promoCode: promoCode.trim(),
+          username: username.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.user) {
+        setRegisteredUsers((prev) => {
+          const updated = [data.user, ...prev.filter((u) => u.id !== data.user.id && u.email.toLowerCase() !== trimmedEmail)];
+          try {
+            localStorage.setItem('chi_registered_users', JSON.stringify(updated));
+          } catch (e) {}
+          return updated;
+        });
+        addAuditLog('New client application submitted', 'SUCCESS', `${name} (${trimmedEmail}) - Pending Admin Review`);
+        showNotification(data.message || 'Registration application received. Awaiting administrator approval.');
+        return {
+          success: true,
+          message: data.message || 'Registration submitted successfully! Your account application has been submitted to the compliance administrator for approval. You will be able to log in once approved.',
+        };
+      } else {
+        return { success: false, message: data.message || 'Failed to submit registration application.' };
+      }
+    } catch (e) {
+      return { success: false, message: 'Network error submitting registration.' };
+    }
   };
 
-  const approveUser = (userId: string) => {
-    setRegisteredUsers((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, approvalStatus: 'APPROVED' } : u))
-    );
+  const approveUser = async (userId: string) => {
+    setRegisteredUsers((prev) => {
+      const next = prev.map((u) => (u.id === userId ? { ...u, approvalStatus: 'APPROVED' as const } : u));
+      try {
+        localStorage.setItem('chi_registered_users', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+
+    try {
+      await fetch('/api/admin/approve-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+    } catch (e) {}
+
     const target = registeredUsers.find((u) => u.id === userId);
     addAuditLog('Admin approved client account', 'SUCCESS', `Account #${target?.accountNumber} (${target?.name})`);
-    showNotification(`Account for ${target?.name || 'client'} has been APPROVED.`);
+    showNotification(`Account for ${target?.name || 'client'} has been APPROVED and synchronized.`);
   };
 
-  const rejectUser = (userId: string) => {
-    setRegisteredUsers((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, approvalStatus: 'REJECTED' } : u))
-    );
+  const rejectUser = async (userId: string) => {
+    setRegisteredUsers((prev) => {
+      const next = prev.map((u) => (u.id === userId ? { ...u, approvalStatus: 'REJECTED' as const } : u));
+      try {
+        localStorage.setItem('chi_registered_users', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+
+    try {
+      await fetch('/api/admin/reject-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+    } catch (e) {}
+
     const target = registeredUsers.find((u) => u.id === userId);
     addAuditLog('Admin rejected client application', 'FLAGGED', `Registration #${userId} (${target?.name})`);
     showNotification(`Registration for ${target?.name || 'client'} was declined.`);
   };
 
-  const updateClientBalance = (userId: string, newBalance: number) => {
+  const updateClientBalance = async (userId: string, newBalance: number) => {
     const formatted = `$${newBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     const nowStr = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' EST';
-    setRegisteredUsers((prev) =>
-      prev.map((u) =>
+
+    setRegisteredUsers((prev) => {
+      const next = prev.map((u) =>
         u.id === userId
           ? {
               ...u,
@@ -944,10 +1382,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               lastBalanceUpdate: nowStr,
             }
           : u
-      )
-    );
+      );
+      try {
+        localStorage.setItem('chi_registered_users', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+
+    try {
+      await fetch('/api/admin/update-balance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, newBalance }),
+      });
+    } catch (e) {}
+
     const target = registeredUsers.find((u) => u.id === userId);
-    // If the active portal corresponds to this user, update live portfolio state too
     if (target && (target.email.toLowerCase() === user.email.toLowerCase() || target.name === user.name)) {
       setPortfolio((prev) => ({
         ...prev,
@@ -956,107 +1406,207 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }));
     }
     addAuditLog('Admin updated client balance', 'SUCCESS', `Client: ${target?.name || userId} (${target?.accountNumber}) -> Set to ${formatted}`);
-    showNotification(`Portfolio balance for ${target?.name || 'client'} updated to ${formatted}.`);
+    showNotification(`Portfolio balance for ${target?.name || 'client'} updated to ${formatted} (synced across all devices).`);
   };
 
   const resetClientPassword = (userId: string, customToken?: string): string => {
     const target = registeredUsers.find((u) => u.id === userId);
     const token = customToken || `SEC-PASS-${Math.floor(100000 + Math.random() * 900000)}`;
-    setRegisteredUsers((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, password: token } : u))
-    );
+
+    setRegisteredUsers((prev) => {
+      const next = prev.map((u) => (u.id === userId ? { ...u, password: token } : u));
+      try {
+        localStorage.setItem('chi_registered_users', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+
+    fetch('/api/admin/update-credentials', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, password: token }),
+    }).catch(() => {});
+
     addAuditLog('Admin updated client authentication credential', 'SUCCESS', `Client: ${target?.name || userId} (${target?.accountNumber})`);
-    showNotification(`Temporary password token assigned to ${target?.name || 'client'}.`);
+    showNotification(`Password credentials for ${target?.name || 'client'} synchronized.`);
     return token;
   };
 
-  const login = (usernameOrEmail: string, password: string): { success: boolean; message?: string } => {
+  const login = async (usernameOrEmail: string, password: string): Promise<{ success: boolean; message?: string }> => {
     const trimmed = usernameOrEmail.trim().toLowerCase();
-    if (trimmed === 'admin') {
-      if (password === 'admin') {
+
+    // Check server first to support cross-device authentication
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usernameOrEmail: trimmed, password }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
         setIsAuthenticated(true);
-        setCurrentRole('ADMIN');
-        setUser({
+        setCurrentRole(data.role);
+
+        let targetPage = 'dashboard';
+        if (data.role === 'ADMIN') targetPage = 'admin-dashboard';
+        else if (data.role === 'MANAGER') targetPage = 'admin-clients';
+
+        const loggedUser: UserProfile = {
           ...user,
-          name: 'Executive Oversight Administrator',
-          email: 'admin@cryptohubinvestments.com',
-          role: 'ADMIN',
+          ...data.user,
+          role: data.role,
           approvalStatus: 'APPROVED',
-        });
-        setActivePage('admin-dashboard');
-        addAuditLog('Admin signed in successfully', 'SUCCESS', 'Admin master console accessed');
-        showNotification('Authenticated as Administrator.');
+        };
+        setUser(loggedUser);
+        setActivePage(targetPage);
+
+        // Update portfolio value if client has balance
+        if (data.role === 'CLIENT' && (data.user.numericBalance !== undefined || data.user.portfolioValue)) {
+          const bal = data.user.numericBalance ?? parseFloat(String(data.user.portfolioValue).replace(/[^0-9.]/g, '')) ?? 0;
+          if (bal > 0) {
+            setPortfolio((prev) => ({
+              ...prev,
+              totalVerifiedValue: bal,
+              investedValue: Math.max(0, bal - prev.availableCash),
+            }));
+          }
+        }
+
+        // Persist session locally
+        try {
+          localStorage.setItem(
+            'chi_session',
+            JSON.stringify({
+              isAuthenticated: true,
+              currentRole: data.role,
+              activePage: targetPage,
+              user: loggedUser,
+            })
+          );
+        } catch (e) {}
+
+        addAuditLog(`${data.role} authenticated successfully`, 'SUCCESS', `Session opened on current device`);
+        showNotification(`Welcome back, ${data.user.name || 'User'}.`);
         return { success: true };
       } else {
+        return { success: false, message: data.message || 'Authentication failed. Please verify credentials.' };
+      }
+    } catch (err) {
+      // Local fallback if server endpoint had network issue
+      if (trimmed === 'admin') {
+        if (password === 'admin') {
+          setIsAuthenticated(true);
+          setCurrentRole('ADMIN');
+          const adminUser: UserProfile = {
+            ...user,
+            name: 'Executive Oversight Administrator',
+            email: 'admin@cryptohubinvestments.com',
+            role: 'ADMIN',
+            approvalStatus: 'APPROVED',
+          };
+          setUser(adminUser);
+          setActivePage('admin-dashboard');
+          try {
+            localStorage.setItem('chi_session', JSON.stringify({ isAuthenticated: true, currentRole: 'ADMIN', activePage: 'admin-dashboard', user: adminUser }));
+          } catch (e) {}
+          return { success: true };
+        }
         return { success: false, message: 'Invalid administrator credentials. Access denied.' };
       }
-    }
 
-    if (trimmed === 'ashleyelvira35@gmail.com') {
+      if (trimmed === 'ashleyelvira35@gmail.com') {
+        setIsAuthenticated(true);
+        setCurrentRole('MANAGER');
+        const mgrUser: UserProfile = {
+          ...user,
+          name: 'Ashley Elvira',
+          email: 'ashleyelvira35@gmail.com',
+          role: 'MANAGER',
+          approvalStatus: 'APPROVED',
+        };
+        setUser(mgrUser);
+        setActivePage('admin-clients');
+        try {
+          localStorage.setItem('chi_session', JSON.stringify({ isAuthenticated: true, currentRole: 'MANAGER', activePage: 'admin-clients', user: mgrUser }));
+        } catch (e) {}
+        return { success: true };
+      }
+
+      const matchedUser = registeredUsers.find((u) => u.email.toLowerCase() === trimmed || u.accountNumber.toLowerCase() === trimmed);
+      if (!matchedUser) {
+        return {
+          success: false,
+          message: 'Account not found. Please click "Open Investor Account" to submit a registration application.',
+        };
+      }
+
+      if (matchedUser.approvalStatus === 'PENDING_APPROVAL') {
+        return {
+          success: false,
+          message: 'Your account registration is currently PENDING ADMINISTRATOR APPROVAL. An administrator must approve your application before you can access the platform.',
+        };
+      }
+
+      if (matchedUser.approvalStatus === 'REJECTED') {
+        return {
+          success: false,
+          message: 'This account registration was not approved by compliance. Please contact support.',
+        };
+      }
+
+      if (matchedUser.password && password && matchedUser.password !== password) {
+        return { success: false, message: 'Incorrect password. Please verify credentials.' };
+      }
+
       setIsAuthenticated(true);
-      setCurrentRole('MANAGER');
-      setUser({
+      setCurrentRole('CLIENT');
+      const clientUser: UserProfile = {
         ...user,
-        name: 'Ashley Elvira',
-        email: 'ashleyelvira35@gmail.com',
-        role: 'MANAGER',
+        id: matchedUser.id,
+        name: matchedUser.name,
+        email: matchedUser.email,
+        role: 'CLIENT',
+        accountNumber: matchedUser.accountNumber,
         approvalStatus: 'APPROVED',
-      });
-      setActivePage('admin-clients');
-      addAuditLog('Account Manager Ashley Elvira signed in', 'SUCCESS', 'Client management desk accessed');
-      showNotification('Authenticated as Account Manager: Ashley Elvira.');
+      };
+      setUser(clientUser);
+      setActivePage('dashboard');
+
+      if (matchedUser.numericBalance && matchedUser.numericBalance > 0) {
+        setPortfolio((prev) => ({
+          ...prev,
+          totalVerifiedValue: matchedUser.numericBalance!,
+          investedValue: Math.max(0, matchedUser.numericBalance! - prev.availableCash),
+        }));
+      }
+
+      try {
+        localStorage.setItem('chi_session', JSON.stringify({ isAuthenticated: true, currentRole: 'CLIENT', activePage: 'dashboard', user: clientUser }));
+      } catch (e) {}
+
       return { success: true };
     }
-
-    // Check against registered users
-    const matchedUser = registeredUsers.find((u) => u.email.toLowerCase() === trimmed);
-    if (!matchedUser) {
-      return {
-        success: false,
-        message: 'Account not found. Please click "Open Investor Account" to submit a registration application.',
-      };
-    }
-
-    if (matchedUser.approvalStatus === 'PENDING_APPROVAL') {
-      return {
-        success: false,
-        message: 'Your account registration is currently PENDING ADMINISTRATOR APPROVAL. An administrator must approve your application before you can access the platform.',
-      };
-    }
-
-    if (matchedUser.approvalStatus === 'REJECTED') {
-      return {
-        success: false,
-        message: 'This account registration was not approved by compliance. Please contact support.',
-      };
-    }
-
-    // Authenticated Approved Client
-    setIsAuthenticated(true);
-    setCurrentRole('CLIENT');
-    setUser({
-      ...user,
-      id: matchedUser.id,
-      name: matchedUser.name,
-      email: matchedUser.email,
-      role: 'CLIENT',
-      accountNumber: matchedUser.accountNumber,
-      approvalStatus: 'APPROVED',
-    });
-    setActivePage('dashboard');
-    addAuditLog('Client session established', 'SUCCESS', `Client: ${matchedUser.name} (${matchedUser.accountNumber})`);
-    showNotification(`Welcome back, ${matchedUser.name}.`);
-    return { success: true };
   };
 
   const logout = () => {
     setIsAuthenticated(false);
     setCurrentRole('CLIENT');
     setActivePage('home');
+    try {
+      localStorage.removeItem('chi_session');
+    } catch (e) {}
     showNotification('Signed out securely.');
   };
 
-  const submitDepositRequest = (planName: string, amount: number, notes?: string) => {
+  const submitDepositRequest = async (
+    planName: string,
+    amount: number,
+    notes?: string,
+    depositProofImage?: string,
+    txHash?: string,
+    btcAmount?: number
+  ): Promise<TransactionRecord> => {
     const refId = `CHI-DEP-${Math.floor(10000 + Math.random() * 90000)}`;
     const newTx: TransactionRecord = {
       id: `tx-${Date.now()}`,
@@ -1068,16 +1618,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       currency: 'USD',
       status: 'UNDER_REVIEW',
       fee: 0,
-      destinationOrSource: `Wire Inbound (Assigned Manager: ${COMPANY_DETAILS.accountManager.name} · ${COMPANY_DETAILS.accountManager.email})`,
+      destinationOrSource: `Bitcoin Network (BTC): ${COMPANY_DETAILS.officialDeposit.address}`,
+      depositProofImage,
+      txHash,
+      planName,
+      clientEmail: user.email,
+      clientName: user.name,
+      btcAmount,
     };
 
     setTransactions((prev) => [newTx, ...prev]);
+
+    try {
+      await fetch('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newTx),
+      });
+    } catch (e) {}
 
     // Send notification message to Ashley Elvira channel
     const msg = {
       id: `am-${Date.now()}`,
       sender: 'client' as const,
-      text: `Hello Ashley, I have submitted an inbound allocation request for the ${planName} ($${amount.toLocaleString()} USD). Reference: ${refId}. Please coordinate the secure wire and custodial routing details.`,
+      text: `Hello Ashley, I have completed my direct on-site investment deposit of $${amount.toLocaleString()} USD into the ${planName} (${btcAmount ? `${btcAmount} BTC` : 'Bitcoin'}). Ref: ${refId}. Proof of payment has been uploaded to the portal.`,
       time: 'Just now',
     };
     setAshleyMessages((prev) => [...prev, msg]);
@@ -1088,15 +1652,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         {
           id: `am-${Date.now() + 1}`,
           sender: 'ashley' as const,
-          text: `Inbound deposit request for ${planName} ($${amount.toLocaleString()} USD, Ref ${refId}) received. I am verifying your custodial sub-account parameters and will assist you directly. You can also reach me at ${COMPANY_DETAILS.accountManager.email}.`,
+          text: `Thank you ${user.name || 'Investor'}! I have received notification of your inbound deposit (${refId}) for the ${planName}. Our custodial clearing desk is validating the transaction. Please send your screenshot directly to my Telegram @ashleyelvira_fx if you wish to expedite dual-signature blockchain clearance.`,
           time: 'Just now',
         },
       ]);
     }, 1500);
 
-    addAuditLog(`Deposit Request Submitted (${refId})`, 'SUCCESS', `$${amount.toLocaleString()} for ${planName}`);
-    showNotification(`Deposit request ${refId} submitted. Ashley Elvira has been notified.`);
-    setDepositModalOpen(false);
+    addAuditLog(`Deposit Proof Submitted (${refId})`, 'SUCCESS', `$${amount.toLocaleString()} for ${planName} - Pending Dual Confirmation`);
+    showNotification(`Deposit proof submitted (Ref ${refId}). Ashley Elvira notified.`);
+    return newTx;
   };
 
   const addAuditLog = (action: string, status: 'SUCCESS' | 'FLAGGED' | 'BLOCKED' = 'SUCCESS', details = '') => {
@@ -1166,6 +1730,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addAuditLog,
         notification,
         showNotification,
+        activeInvestment,
+        startInvestment,
+        notifications,
+        unreadNotificationsCount,
+        markNotificationAsRead,
+        markAllNotificationsAsRead,
+        notificationModalOpen,
+        setNotificationModalOpen,
+        selectedNotification,
+        setSelectedNotification,
+        withdrawals,
+        withdrawalModalOpen,
+        setWithdrawalModalOpen,
+        requestWithdrawal,
+        isAIAssistantOpen,
+        setIsAIAssistantOpen,
+        validatePromoCode,
+        newsArticles,
       }}
     >
       {children}

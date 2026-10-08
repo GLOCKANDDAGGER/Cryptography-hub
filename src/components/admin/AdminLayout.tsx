@@ -35,10 +35,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
   const isAuthorized = currentRole === 'ADMIN' || currentRole === 'MANAGER';
 
-  const handleAdminLoginSubmit = (e: React.FormEvent) => {
+  const handleAdminLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
-    const result = login(adminUsername, adminPassword);
+    const result = await login(adminUsername, adminPassword);
     if (!result.success) {
       setLoginError(result.message || 'Invalid administrator credentials. Access restricted.');
     }

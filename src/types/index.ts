@@ -2,15 +2,16 @@ export type UserRole = 'CLIENT' | 'MANAGER' | 'ADMIN';
 
 export type KYCStatus = 'NOT_SUBMITTED' | 'UNDER_REVIEW' | 'VERIFIED' | 'TIER_2_ENHANCED';
 
-export type TransactionType = 'DEPOSIT' | 'ALLOCATION' | 'REBALANCE' | 'WITHDRAWAL' | 'FEE' | 'YIELD';
+export type TransactionType = 'DEPOSIT' | 'ALLOCATION' | 'REBALANCE' | 'WITHDRAWAL' | 'FEE' | 'YIELD' | 'PROMOTIONAL_BONUS' | 'INVESTMENT';
 
-export type TransactionStatus = 'COMPLETED' | 'PENDING' | 'UNDER_REVIEW' | 'FAILED' | 'CANCELLED';
+export type TransactionStatus = 'COMPLETED' | 'PENDING' | 'UNDER_REVIEW' | 'FAILED' | 'CANCELLED' | 'CREDITED';
 
 export type AccountApprovalStatus = 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
 
 export interface RegisteredUser {
   id: string;
   name: string;
+  username?: string;
   email: string;
   password?: string;
   phone?: string;
@@ -20,6 +21,13 @@ export interface RegisteredUser {
   registeredDate: string;
   portfolioValue?: string;
   numericBalance?: number;
+  promotionalBalance?: number;
+  depositBalance?: number;
+  availableBalance?: number;
+  investedCapital?: number;
+  profitLoss?: number;
+  withdrawableBalance?: number;
+  pendingWithdrawal?: number;
   lastBalanceUpdate?: string;
   jurisdiction?: string;
 }
@@ -27,6 +35,7 @@ export interface RegisteredUser {
 export interface UserProfile {
   id: string;
   name: string;
+  username?: string;
   email: string;
   role: UserRole;
   approvalStatus: AccountApprovalStatus;
@@ -39,6 +48,15 @@ export interface UserProfile {
   memberSince: string;
   twoFactorEnabled: boolean;
   assignedManagerId?: string;
+  balance?: number;
+  numericBalance?: number;
+  promotionalBalance?: number;
+  depositBalance?: number;
+  availableBalance?: number;
+  investedCapital?: number;
+  profitLoss?: number;
+  withdrawableBalance?: number;
+  pendingWithdrawal?: number;
 }
 
 export interface PortfolioAsset {
@@ -78,6 +96,22 @@ export interface TransactionRecord {
   referenceId: string;
   fee: number;
   destinationOrSource: string;
+  depositProofImage?: string;
+  txHash?: string;
+  planName?: string;
+  clientEmail?: string;
+  clientName?: string;
+  btcAmount?: number;
+  promoCode?: string;
+}
+
+export interface PromoCampaign {
+  code: string;
+  bonusAmount: number;
+  status: 'ACTIVE' | 'EXPIRED' | 'PAUSED';
+  description: string;
+  redemptionCount: number;
+  maxRedemptions: number;
 }
 
 export interface SupportMessage {
@@ -167,4 +201,71 @@ export interface AppointmentRecord {
   status: 'CONFIRMED' | 'PENDING' | 'COMPLETED' | 'CANCELLED';
   createdAt: string;
 }
+
+export interface ActiveInvestment {
+  id: string;
+  planName: string;
+  strategy: string;
+  initialCapital: number;
+  currentValue: number;
+  profit: number;
+  growthPercent: number;
+  targetGrowthPercent: number;
+  durationDays: number;
+  currentDay: number;
+  startDate: string;
+  expectedCompletionDate: string;
+  status: 'ACTIVE' | 'SETTLING' | 'COMPLETED' | 'PAUSED';
+  growthHistory: { step: string; value: number; timestamp?: string }[];
+  isDemo: boolean;
+}
+
+export type NotificationType = 'INVESTMENT' | 'ACCOUNT' | 'SECURITY' | 'TRANSACTION' | 'COMPLIANCE';
+
+export interface AppNotification {
+  id: string;
+  title: string;
+  message: string;
+  timestamp: string;
+  isRead: boolean;
+  type: NotificationType;
+  destinationAction?: string;
+  data?: any;
+}
+
+export interface CryptoNewsArticle {
+  id: string;
+  headline: string;
+  summary: string;
+  content?: string;
+  publishedAt: string;
+  source: string;
+  category: 'Bitcoin' | 'Ethereum' | 'Altcoins' | 'Regulation' | 'Blockchain' | 'Institutional Adoption' | 'Security' | 'Technology';
+  url?: string;
+  readTime: string;
+}
+
+export interface WithdrawalRequest {
+  id: string;
+  userId: string;
+  userEmail: string;
+  userName: string;
+  amount: number;
+  destinationAddress: string;
+  asset: string;
+  status: 'UNDER_REVIEW' | 'PROCESSING' | 'COMPLETED' | 'DECLINED';
+  requestedAt: string;
+  referenceId: string;
+  notes?: string;
+}
+
+export interface UserBalanceBreakdown {
+  totalBalance: number;
+  availableBalance: number;
+  investedCapital: number;
+  pendingInvestment: number;
+  withdrawableBalance: number;
+  pendingWithdrawal: number;
+}
+
 

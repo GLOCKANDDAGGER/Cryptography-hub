@@ -10,6 +10,8 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { RiskBanner } from '../common/RiskBanner';
+import { AttentionInvestmentBanner } from '../common/AttentionInvestmentBanner';
+import { ActiveInvestmentCard } from './ActiveInvestmentCard';
 
 export const PortfolioView: React.FC = () => {
   const { portfolio, rebalancePortfolio, showNotification } = useApp();
@@ -65,6 +67,9 @@ export const PortfolioView: React.FC = () => {
           <span>{rebalanceMode ? 'Cancel Simulator' : 'Adjust Allocation Model'}</span>
         </button>
       </div>
+
+      {/* Attention: Make Investment Directly on Website */}
+      <AttentionInvestmentBanner variant="compact" />
 
       {/* Mandatory Risk Banner */}
       <RiskBanner compact />
@@ -126,6 +131,9 @@ export const PortfolioView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Active Investment Strategy Card */}
+      <ActiveInvestmentCard />
 
       {/* Asset Holdings Table */}
       <div className="bg-[#0B0F19] border border-[#1F2937] rounded-lg p-6 space-y-4">

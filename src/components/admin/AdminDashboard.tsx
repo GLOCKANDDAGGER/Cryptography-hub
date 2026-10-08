@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import {
   Users,
@@ -10,21 +10,41 @@ import {
   Check,
   X,
   AlertTriangle,
+  Image as ImageIcon,
+  FileCheck,
 } from 'lucide-react';
+import { TransactionRecord } from '../../types';
 
 export const AdminDashboard: React.FC = () => {
-  const { transactions, updateTransactionStatus, tickets, setActivePage, showNotification } = useApp();
+  const { transactions, updateTransactionStatus, tickets, setActivePage, showNotification, updateClientBalance, registeredUsers } = useApp();
+  const [viewingProofTx, setViewingProofTx] = useState<TransactionRecord | null>(null);
 
   const pendingTransactions = transactions.filter((t) => t.status === 'UNDER_REVIEW' || t.status === 'PENDING');
 
-  const handleApprove = (id: string, ref: string) => {
-    updateTransactionStatus(id, 'COMPLETED');
-    showNotification(`Transaction ${ref} approved and verified.`);
+  const handleApprove = (tx: TransactionRecord) => {
+    updateTransactionStatus(tx.id, 'COMPLETED');
+
+    if (tx.type === 'DEPOSIT') {
+      const match = registeredUsers.find(
+        (u) =>
+          (tx.clientEmail && u.email.toLowerCase() === tx.clientEmail.toLowerCase()) ||
+          (tx.clientName && u.name.toLowerCase() === tx.clientName.toLowerCase())
+      );
+      if (match) {
+        const cur = Number(match.numericBalance) || 0;
+        const updated = cur + Number(tx.amount || 0);
+        updateClientBalance(match.id, updated);
+      }
+    }
+
+    showNotification(`Transaction ${tx.referenceId} approved and verified.`);
+    setViewingProofTx(null);
   };
 
-  const handleFlag = (id: string, ref: string) => {
-    updateTransactionStatus(id, 'FAILED');
-    showNotification(`Transaction ${ref} flagged and placed on compliance hold.`);
+  const handleFlag = (tx: TransactionRecord) => {
+    updateTransactionStatus(tx.id, 'FAILED');
+    showNotification(`Transaction ${tx.referenceId} flagged and placed on compliance hold.`);
+    setViewingProofTx(null);
   };
 
   return (
@@ -120,7 +140,7 @@ export const AdminDashboard: React.FC = () => {
                     <td className="py-3 px-3 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
-                          onClick={() => handleApprove(tx.id, tx.referenceId)}
+                          onClick={() => handleApprove(tx)}
                           className="px-2.5 py-1 bg-emerald-950 hover:bg-emerald-900 border border-emerald-700 text-emerald-300 rounded flex items-center gap-1 transition-colors cursor-pointer"
                           title="Authorize Transaction"
                         >
@@ -128,7 +148,7 @@ export const AdminDashboard: React.FC = () => {
                           <span>Approve</span>
                         </button>
                         <button
-                          onClick={() => handleFlag(tx.id, tx.referenceId)}
+                          onClick={() => handleFlag(tx)}
                           className="px-2.5 py-1 bg-rose-950 hover:bg-rose-900 border border-rose-700 text-rose-300 rounded flex items-center gap-1 transition-colors cursor-pointer"
                           title="Reject / Compliance Flag"
                         >

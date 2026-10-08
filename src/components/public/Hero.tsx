@@ -2,6 +2,7 @@ import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { ArrowRight, ShieldCheck, TrendingUp, Lock, Users, Calendar, MessageCircle } from 'lucide-react';
 import { ASSETS, COMPANY_DETAILS } from '../../constants/assets';
+import { AttentionInvestmentBanner } from '../common/AttentionInvestmentBanner';
 
 export const Hero: React.FC = () => {
   const {
@@ -147,8 +148,11 @@ export const Hero: React.FC = () => {
           </div>
         </div>
 
+        {/* Attention Notice: Make Investment Directly on Website */}
+        <AttentionInvestmentBanner className="mt-10" />
+
         {/* Live Market Ticker Strip */}
-        <div className="mt-12 p-3 bg-[#0A0E17] border border-[#1E293B] rounded-md">
+        <div className="mt-8 p-3 bg-[#0A0E17] border border-[#1E293B] rounded-md">
           <div className="flex items-center justify-between gap-4 overflow-x-auto pb-1 text-xs">
             <div className="flex items-center gap-2 font-mono text-slate-400 shrink-0 pr-4 border-r border-slate-800">
               <span className="w-2 h-2 rounded-full bg-[#FFA000] animate-ping" />

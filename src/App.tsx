@@ -14,6 +14,9 @@ import { ContactView } from './components/public/ContactView';
 import { AuthModal } from './components/public/AuthModal';
 import { DepositModal } from './components/common/DepositModal';
 import { ScheduleAppointmentModal } from './components/common/ScheduleAppointmentModal';
+import { NotificationsModal } from './components/common/NotificationsModal';
+import { WithdrawalModal } from './components/common/WithdrawalModal';
+import { AIAssistant } from './components/common/AIAssistant';
 import { ClientAuthGate } from './components/public/ClientAuthGate';
 import { Footer } from './components/public/Footer';
 
@@ -27,6 +30,7 @@ import { AccountManagerView } from './components/dashboard/AccountManagerView';
 import { SupportView } from './components/dashboard/SupportView';
 import { SecurityView as DashboardSecurityView } from './components/dashboard/SecurityView';
 import { ProfileView } from './components/dashboard/ProfileView';
+import { CryptoNewsView } from './components/dashboard/CryptoNewsView';
 
 // Admin Components
 import { AdminLayout } from './components/admin/AdminLayout';
@@ -80,6 +84,7 @@ const AppContent: React.FC = () => {
     'support',
     'security-center',
     'profile',
+    'crypto-news',
   ].includes(activePage);
 
   if (isDashboardRoute) {
@@ -94,6 +99,9 @@ const AppContent: React.FC = () => {
           <DepositModal />
           <AuthModal />
           <ScheduleAppointmentModal />
+          <NotificationsModal />
+          <WithdrawalModal />
+          <AIAssistant />
           {renderNotification()}
         </div>
       );
@@ -107,6 +115,7 @@ const AppContent: React.FC = () => {
     if (activePage === 'support') dashboardContent = <SupportView />;
     if (activePage === 'security-center') dashboardContent = <DashboardSecurityView />;
     if (activePage === 'profile') dashboardContent = <ProfileView />;
+    if (activePage === 'crypto-news') dashboardContent = <CryptoNewsView />;
 
     return (
       <div className={`min-h-screen flex flex-col ${theme === 'light' ? 'light bg-[#F8FAFC] text-slate-900' : 'dark bg-[#000000] text-slate-100'}`}>
@@ -114,6 +123,9 @@ const AppContent: React.FC = () => {
         <DepositModal />
         <AuthModal />
         <ScheduleAppointmentModal />
+        <NotificationsModal />
+        <WithdrawalModal />
+        <AIAssistant />
         {renderNotification()}
       </div>
     );
@@ -150,6 +162,9 @@ const AppContent: React.FC = () => {
       <AuthModal />
       <DepositModal />
       <ScheduleAppointmentModal />
+      <NotificationsModal />
+      <WithdrawalModal />
+      <AIAssistant />
       {renderNotification()}
     </div>
   );

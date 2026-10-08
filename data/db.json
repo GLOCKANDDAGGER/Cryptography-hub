@@ -1,0 +1,368 @@
+{
+  "users": [
+    {
+      "id": "usr-ava-addams",
+      "name": "Ava Addams",
+      "username": "alexia_roy",
+      "email": "alexia_roy@cryptohubinvestments.com",
+      "passwordHash": "a181e11ee98a39e31a89c8942b10a26ba6bc4f1a0e107db3c6ff0f81d1159938bfe4381861e695d53956cb6d22d253ba679b8d810168cbab6bc49463990fdf7d",
+      "phone": "+1 (617) 555-0391",
+      "role": "CLIENT",
+      "approvalStatus": "APPROVED",
+      "accountNumber": "CHI-7721-8840-AA",
+      "registeredDate": "2026-10-06",
+      "portfolioValue": "$3,700.00",
+      "numericBalance": 3700.0,
+      "depositBalance": 3700.0,
+      "promotionalBalance": 0.0,
+      "availableBalance": 3700.0,
+      "investedCapital": 0.0,
+      "profitLoss": 0.0,
+      "withdrawableBalance": 3700.0,
+      "pendingWithdrawal": 0.0,
+      "lastBalanceUpdate": "2026-10-06 09:30 EST",
+      "jurisdiction": "Massachusetts, US"
+    },
+    {
+      "id": "usr-1790927382776",
+      "name": "Alex Mercer",
+      "email": "alex@mercer.com",
+      "password": "SuperNewPass2026!",
+      "phone": "+1 555-9876",
+      "role": "CLIENT",
+      "approvalStatus": "APPROVED",
+      "accountNumber": "CHI-8845-6371-MV",
+      "registeredDate": "2026-10-02",
+      "portfolioValue": "$75,000.00",
+      "numericBalance": 75000,
+      "lastBalanceUpdate": "10/2/2026 07:49 AM EST",
+      "jurisdiction": "Massachusetts, US"
+    },
+    {
+      "id": "usr-1",
+      "name": "Marcus Vance",
+      "email": "m.vance@institutional-asset.com",
+      "password": "password123",
+      "phone": "+1 (617) 555-0192",
+      "role": "CLIENT",
+      "approvalStatus": "APPROVED",
+      "accountNumber": "CHI-8849-9210-MV",
+      "registeredDate": "2024-10-15",
+      "portfolioValue": "$154,315.62",
+      "numericBalance": 154315.62,
+      "lastBalanceUpdate": "10/7/2026 04:07 PM EST",
+      "jurisdiction": "Massachusetts, US",
+      "profitLoss": 3.86
+    },
+    {
+      "id": "usr-2",
+      "name": "Eleanor Wright",
+      "email": "e.wright@boston-capital.org",
+      "password": "password123",
+      "phone": "+1 (617) 555-0244",
+      "role": "CLIENT",
+      "approvalStatus": "APPROVED",
+      "accountNumber": "CHI-9021-3411-EW",
+      "registeredDate": "2025-01-20",
+      "portfolioValue": "$420,000.00",
+      "numericBalance": 420000,
+      "lastBalanceUpdate": "2026-09-20 11:30 EST",
+      "jurisdiction": "Massachusetts, US"
+    },
+    {
+      "id": "usr-3",
+      "name": "David Sterling",
+      "email": "d.sterling@sterlingholdings.com",
+      "password": "password123",
+      "phone": "+1 (617) 555-0811",
+      "role": "CLIENT",
+      "approvalStatus": "PENDING_APPROVAL",
+      "accountNumber": "CHI-9912-4011-DS",
+      "registeredDate": "Today 14:15 EST",
+      "portfolioValue": "$0.00",
+      "numericBalance": 0,
+      "lastBalanceUpdate": "Pending Initial Funding",
+      "jurisdiction": "Massachusetts, US"
+    }
+  ],
+  "promoCampaigns": [
+    {
+      "code": "CRYPTOHUB26",
+      "bonusAmount": 100,
+      "status": "ACTIVE",
+      "description": "Welcome $100 Promotional Bonus for New Verified Accounts",
+      "redemptionCount": 0,
+      "maxRedemptions": 10000
+    }
+  ],
+  "appointments": [
+    {
+      "id": "apt-1",
+      "referenceId": "CHI-APT-88210",
+      "clientName": "Marcus Vance",
+      "clientEmail": "m.vance@institutional-asset.com",
+      "clientPhone": "+1 (617) 555-0192",
+      "telegramUsername": "@marcus_vance",
+      "managerName": "Ashley Elvira",
+      "managerEmail": "ashleyelvira35@gmail.com",
+      "managerTelegram": "@ashleyelvira_fx",
+      "consultationType": "7-Day Growth Strategy ($250 Min Plan)",
+      "date": "2026-10-02",
+      "timeSlot": "11:30 AM EST",
+      "medium": "Telegram Call (@ashleyelvira_fx)",
+      "notes": "Reviewing quarterly allocation into 7-day 65% growth cycle and cold custody settlement.",
+      "status": "CONFIRMED",
+      "createdAt": "2026-09-29 14:15 EST"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "tx-ava-init",
+      "date": "2026-10-06 09:30 EST",
+      "type": "DEPOSIT",
+      "description": "Custodial Deposit Settlement - Verified Capital Funding",
+      "amount": 3700.0,
+      "currency": "USD",
+      "status": "COMPLETED",
+      "referenceId": "CHI-DEP-94102",
+      "fee": 0,
+      "destinationOrSource": "Segregated Cold Storage Custodial Vault (1Hn5EATL...)",
+      "clientEmail": "alexia_roy@cryptohubinvestments.com",
+      "clientName": "Ava Addams",
+      "btcAmount": 0.04433
+    },
+    {
+      "id": "tx-1",
+      "date": "2026-10-03 09:15 EST",
+      "type": "DEPOSIT",
+      "description": "Initial Strategy Allocation - Silver Growth Tier",
+      "amount": 1000,
+      "currency": "USD",
+      "status": "COMPLETED",
+      "referenceId": "CHI-DEP-40192",
+      "fee": 0,
+      "destinationOrSource": "Bitcoin Custodial Vault (1Hn5EATL...)",
+      "planName": "Silver Growth Tier",
+      "clientEmail": "m.vance@institutional-asset.com",
+      "clientName": "Marcus Vance",
+      "btcAmount": 0.011982
+    },
+    {
+      "id": "tx-2",
+      "date": "2026-10-05 14:20 EST",
+      "type": "YIELD",
+      "description": "Interim Strategy Yield Distribution (Day 3)",
+      "amount": 150,
+      "currency": "USD",
+      "status": "COMPLETED",
+      "referenceId": "CHI-YLD-77218",
+      "fee": 0,
+      "destinationOrSource": "Algorithmic Spot Volatility Ledger",
+      "clientEmail": "m.vance@institutional-asset.com",
+      "clientName": "Marcus Vance"
+    }
+  ],
+  "activeInvestments": [
+    {
+      "id": "act-inv-1",
+      "userId": "usr-1",
+      "planName": "Silver Growth Tier",
+      "strategy": "Bitcoin Spot Volatility & Core Reserves",
+      "initialCapital": 1000,
+      "currentValue": 1251.36,
+      "profit": 251.36,
+      "growthPercent": 25.14,
+      "targetGrowthPercent": 65,
+      "durationDays": 7,
+      "currentDay": 4,
+      "startDate": "2026-10-03T09:00:00Z",
+      "expectedCompletionDate": "2026-10-10T18:00:00Z",
+      "status": "ACTIVE",
+      "growthHistory": [
+        {
+          "step": "Starting Capital",
+          "value": 1000,
+          "timestamp": "Day 1"
+        },
+        {
+          "step": "Growth Step 1",
+          "value": 1075,
+          "timestamp": "Day 2"
+        },
+        {
+          "step": "Growth Step 2",
+          "value": 1150,
+          "timestamp": "Day 3"
+        },
+        {
+          "step": "Current Capital",
+          "value": 1247.5,
+          "timestamp": "Day 4 (Today)"
+        },
+        {
+          "step": "Cycle Performance (04:07 PM)",
+          "value": 1251.36,
+          "timestamp": "04:07 PM EST"
+        }
+      ],
+      "isDemo": true,
+      "lastHourlyUpdate": "2026-10-07T16:07:55.749Z"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "notif-ava-1",
+      "userId": "usr-ava-addams",
+      "title": "Custodial Deposit Settled",
+      "message": "Your initial custodial deposit of $3,700.00 USD has cleared into cold storage vault custody (Ref #CHI-DEP-94102).",
+      "timestamp": "2026-10-06T09:30:00Z",
+      "isRead": false,
+      "type": "TRANSACTION",
+      "destinationAction": "transactions"
+    },
+    {
+      "id": "notif-1",
+      "userId": "usr-1",
+      "title": "Active Investment Update",
+      "message": "Your Silver Growth Tier active investment has progressed to Day 4 (+24.75% current profit, $1,247.50 valuation).",
+      "timestamp": "2026-10-07T03:30:00Z",
+      "isRead": false,
+      "type": "INVESTMENT",
+      "destinationAction": "portfolio"
+    },
+    {
+      "id": "notif-2",
+      "userId": "usr-1",
+      "title": "Account Profile Verified",
+      "message": "Your institutional KYC Tier 2 profile and custody mandate were confirmed by compliance.",
+      "timestamp": "2026-10-06T15:12:00Z",
+      "isRead": false,
+      "type": "ACCOUNT",
+      "destinationAction": "profile"
+    },
+    {
+      "id": "notif-3",
+      "userId": "usr-1",
+      "title": "Security Health Alert",
+      "message": "A new authenticated session was validated with Hardware 2FA from your verified device.",
+      "timestamp": "2026-10-06T10:45:00Z",
+      "isRead": true,
+      "type": "SECURITY",
+      "destinationAction": "security-center"
+    },
+    {
+      "id": "notif-4",
+      "userId": "usr-1",
+      "title": "Deposit Settlement Cleared",
+      "message": "Bitcoin custodial transfer Ref #CHI-DEP-40192 ($1,000.00 USD) cleared into segregated funding ledger.",
+      "timestamp": "2026-10-03T09:15:00Z",
+      "isRead": true,
+      "type": "TRANSACTION",
+      "destinationAction": "transactions"
+    }
+  ],
+  "news": [
+    {
+      "id": "news-1",
+      "headline": "Institutional Bitcoin Inflows Surge as Corporate Reserve Allocations Accelerate",
+      "summary": "Multi-sig custodial repositories report sovereign treasuries and corporate reserve mandates locking up circulating supply, driving exchange balances to multi-year lows.",
+      "content": "Digital asset treasuries continue their rapid institutional adoption phase. Major hedge funds and corporate balance sheets are increasing strategic allocations to cold-storage Bitcoin holdings, prioritizing physical delivery and segregated keys over synthetic financial derivatives. Custodial reserve reporting indicates that exchange liquidity depth has tightened significantly.",
+      "publishedAt": "2026-10-06T14:30:00Z",
+      "source": "CoinDesk",
+      "category": "Institutional Adoption",
+      "readTime": "4 min read",
+      "url": "https://www.coindesk.com"
+    },
+    {
+      "id": "news-2",
+      "headline": "Federal Regulatory Framework Solidifies Digital Custody Safeguards for Wealth Managers",
+      "summary": "Updated compliance guidance establishes strict dual-signature validation and cold vault segregation benchmarks for institutional cryptocurrency asset managers.",
+      "content": "Regulatory authorities have issued clarified guidance concerning qualified custodianship of digital assets. The new standards emphasize segregated cold vault custody, verifiable proof of reserves, and hardware multi-factor authentication for high-net-worth portfolio management.",
+      "publishedAt": "2026-10-05T18:15:00Z",
+      "source": "Bloomberg Crypto",
+      "category": "Regulation",
+      "readTime": "5 min read",
+      "url": "https://www.bloomberg.com/crypto"
+    },
+    {
+      "id": "news-3",
+      "headline": "Ethereum Staking Yield Dynamics and Layer-2 Settlement Volume Reach New Highs",
+      "summary": "DeFi protocol yield compression leads accredited capital to focus on direct spot staking models and automated execution networks.",
+      "content": "Layer-2 settlement throughput has surpassed mainnet transaction counts, while staking yields stabilize around institutional treasury benchmarks. Asset managers are adopting multi-asset algorithmic balancing strategies to harvest yield while mitigating smart contract counterparty risk.",
+      "publishedAt": "2026-10-05T09:00:00Z",
+      "source": "Reuters",
+      "category": "Ethereum",
+      "readTime": "3 min read",
+      "url": "https://www.reuters.com"
+    },
+    {
+      "id": "news-4",
+      "headline": "Zero-Knowledge Rollup Security Architecture Enhances Cross-Chain Asset Isolation",
+      "summary": "Cryptographic zero-knowledge proofs enable auditable transaction settlement without exposing underlying private wallet addresses or client holdings.",
+      "content": "Technological advancements in zero-knowledge cryptography are providing institutional participants with privacy and compliance simultaneously. Cryptographic proofs allow auditors to verify solvency and transaction authenticity in real time.",
+      "publishedAt": "2026-10-04T12:00:00Z",
+      "source": "Decrypt",
+      "category": "Technology",
+      "readTime": "4 min read",
+      "url": "https://decrypt.co"
+    },
+    {
+      "id": "news-5",
+      "headline": "Macro Inflation Signals and Dollar Reserve Trends Drive Diversified Crypto Strategies",
+      "summary": "Global macroeconomic volatility underscores the utility of disciplined cyclical investment tiers with automated downside risk hedging.",
+      "content": "Global central bank monetary policy updates are reinforcing digital assets as viable non-correlated capital preservation vehicles. Wealth advisors report increasing client interest in structured 7-day to 30-day trading terms backed by dedicated professional account managers.",
+      "publishedAt": "2026-10-03T16:45:00Z",
+      "source": "CoinTelegraph",
+      "category": "Market Updates",
+      "readTime": "3 min read",
+      "url": "https://cointelegraph.com"
+    }
+  ],
+  "withdrawals": [],
+  "auditLogs": [
+    {
+      "id": "log-1790927403782",
+      "timestamp": "2026-10-02 07:50:03 EST",
+      "actor": "Executive Admin Desk",
+      "actorRole": "ADMIN",
+      "action": "Admin updated client authentication credential",
+      "ipAddress": "127.0.0.1",
+      "location": "Synchronized Network",
+      "status": "SUCCESS",
+      "details": "Client: Alex Mercer (CHI-8845-6371-MV) password credential updated"
+    },
+    {
+      "id": "log-1790927397750",
+      "timestamp": "2026-10-02 07:49:57 EST",
+      "actor": "Executive Admin Desk",
+      "actorRole": "ADMIN",
+      "action": "Admin updated client balance",
+      "ipAddress": "127.0.0.1",
+      "location": "Synchronized Network",
+      "status": "SUCCESS",
+      "details": "Client: Alex Mercer (CHI-8845-6371-MV) -> Set to $75,000.00"
+    },
+    {
+      "id": "log-1790927391447",
+      "timestamp": "2026-10-02 07:49:51 EST",
+      "actor": "Executive Admin Desk",
+      "actorRole": "ADMIN",
+      "action": "Admin approved client account",
+      "ipAddress": "127.0.0.1",
+      "location": "Synchronized Network",
+      "status": "SUCCESS",
+      "details": "Account #CHI-8845-6371-MV (Alex Mercer) approved and synchronized across all devices"
+    },
+    {
+      "id": "log-1790927382776",
+      "timestamp": "2026-10-02 07:49:42 EST",
+      "actor": "New Registration Desk",
+      "actorRole": "CLIENT",
+      "action": "New client registration application submitted",
+      "ipAddress": "127.0.0.1",
+      "location": "Synchronized Web Session",
+      "status": "SUCCESS",
+      "details": "Alex Mercer (alex@mercer.com) - Pending Admin Review"
+    }
+  ]
+}

@@ -7,6 +7,8 @@ import {
   Mail,
   ArrowRight,
   Eye,
+  EyeOff,
+  Copy,
   X,
   Check,
   Clock,
@@ -35,6 +37,11 @@ export const AdminClients: React.FC = () => {
   // Credential Modal State
   const [credentialModalClient, setCredentialModalClient] = useState<RegisteredUser | null>(null);
   const [temporaryToken, setTemporaryToken] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [copiedPassword, setCopiedPassword] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState(false);
+  const [customPasswordInput, setCustomPasswordInput] = useState('');
+  const [credentialSavedMessage, setCredentialSavedMessage] = useState<string | null>(null);
 
   const pendingUsers = registeredUsers.filter((u) => u.approvalStatus === 'PENDING_APPROVAL');
   const approvedUsers = registeredUsers.filter((u) => u.approvalStatus === 'APPROVED');
@@ -62,13 +69,47 @@ export const AdminClients: React.FC = () => {
   };
 
   const handleOpenCredentials = (client: RegisteredUser) => {
-    setCredentialModalClient(client);
+    // Find latest version from registeredUsers in case it was updated
+    const latest = registeredUsers.find((u) => u.id === client.id) || client;
+    setCredentialModalClient(latest);
     setTemporaryToken(null);
+    setShowPassword(false);
+    setCopiedPassword(false);
+    setCopiedEmail(false);
+    setCustomPasswordInput('');
+    setCredentialSavedMessage(null);
   };
 
   const handleGenerateTemporaryToken = (clientId: string) => {
     const token = resetClientPassword(clientId);
     setTemporaryToken(token);
+    if (credentialModalClient) {
+      setCredentialModalClient((prev) => (prev ? { ...prev, password: token } : null));
+    }
+  };
+
+  const handleSaveCustomPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!credentialModalClient || !customPasswordInput.trim()) return;
+    const pwd = customPasswordInput.trim();
+    resetClientPassword(credentialModalClient.id, pwd);
+    setCredentialModalClient((prev) => (prev ? { ...prev, password: pwd } : null));
+    setCredentialSavedMessage(`Password updated & synchronized to: "${pwd}"`);
+    setCustomPasswordInput('');
+    setTimeout(() => setCredentialSavedMessage(null), 4000);
+  };
+
+  const copyToClipboard = (text: string, type: 'password' | 'email') => {
+    try {
+      navigator.clipboard.writeText(text);
+      if (type === 'password') {
+        setCopiedPassword(true);
+        setTimeout(() => setCopiedPassword(false), 2500);
+      } else {
+        setCopiedEmail(true);
+        setTimeout(() => setCopiedEmail(false), 2500);
+      }
+    } catch (e) {}
   };
 
   return (
@@ -141,19 +182,26 @@ export const AdminClients: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
+                  <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800">
                     <button
                       onClick={() => approveUser(u.id)}
-                      className="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                      className="py-2.5 px-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1 cursor-pointer shadow-sm"
                     >
-                      <Check className="w-4 h-4" />
+                      <Check className="w-3.5 h-3.5" />
                       <span>Approve</span>
                     </button>
                     <button
-                      onClick={() => rejectUser(u.id)}
-                      className="py-2.5 px-3 bg-rose-950/60 hover:bg-rose-900 border border-rose-800 text-rose-300 rounded-lg text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                      onClick={() => handleOpenCredentials(u)}
+                      className="py-2.5 px-2 bg-[#1A2338] hover:bg-[#253350] border border-slate-700 text-slate-200 rounded-lg font-bold text-xs flex items-center justify-center gap-1 cursor-pointer"
                     >
-                      <UserX className="w-4 h-4" />
+                      <Key className="w-3.5 h-3.5 text-[#FFA000]" />
+                      <span>Credentials</span>
+                    </button>
+                    <button
+                      onClick={() => rejectUser(u.id)}
+                      className="py-2.5 px-2 bg-rose-950/60 hover:bg-rose-900 border border-rose-800 text-rose-300 rounded-lg text-xs flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      <UserX className="w-3.5 h-3.5" />
                       <span>Decline</span>
                     </button>
                   </div>
@@ -189,7 +237,15 @@ export const AdminClients: React.FC = () => {
                             className="px-3 py-1 bg-emerald-950 hover:bg-emerald-900 border border-emerald-700 text-emerald-300 rounded font-bold text-xs flex items-center gap-1 cursor-pointer transition-colors"
                           >
                             <Check className="w-3.5 h-3.5" />
-                            <span>Approve Account</span>
+                            <span>Approve</span>
+                          </button>
+                          <button
+                            onClick={() => handleOpenCredentials(u)}
+                            className="px-2.5 py-1 bg-[#1A2338] hover:bg-[#253350] border border-slate-700 text-slate-200 rounded font-bold text-xs flex items-center gap-1 cursor-pointer transition-colors"
+                            title="View credentials before approval"
+                          >
+                            <Key className="w-3.5 h-3.5 text-[#FFA000]" />
+                            <span>Credentials</span>
                           </button>
                           <button
                             onClick={() => rejectUser(u.id)}
@@ -465,25 +521,78 @@ export const AdminClients: React.FC = () => {
             </div>
 
             <div className="p-4 bg-[#080B11] border border-slate-800 rounded-xl space-y-3 text-xs font-mono">
-              <div className="flex justify-between py-1.5 border-b border-slate-800">
+              <div className="flex items-center justify-between py-1.5 border-b border-slate-800">
                 <span className="text-slate-400">Login Username / Email:</span>
-                <span className="text-white font-bold">{credentialModalClient.email}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-white font-bold select-all">{credentialModalClient.email}</span>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(credentialModalClient.email, 'email')}
+                    className="p-1 hover:bg-slate-800 text-slate-400 hover:text-white rounded transition-colors cursor-pointer"
+                    title="Copy email"
+                  >
+                    {copiedEmail ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
               </div>
+
+              {/* Directly visible and manageable password */}
+              <div className="flex items-center justify-between py-2 border-b border-slate-800 bg-[#0F1626]/60 p-2.5 rounded-lg border border-amber-900/40">
+                <div className="space-y-0.5">
+                  <span className="text-slate-300 font-bold flex items-center gap-1.5">
+                    <Key className="w-3.5 h-3.5 text-[#FFA000]" />
+                    <span>Client Login Password:</span>
+                  </span>
+                  <span className="text-[10px] text-slate-400 block font-sans">
+                    Synchronized across all client devices & logins
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-amber-400 font-bold text-sm tracking-wider select-all bg-black/60 px-2.5 py-1 rounded border border-amber-500/30">
+                    {showPassword ? (credentialModalClient.password || 'password123') : '••••••••••••'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors cursor-pointer"
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5 text-[#FFA000]" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(credentialModalClient.password || 'password123', 'password')}
+                    className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-[11px]"
+                    title="Copy password"
+                  >
+                    {copiedPassword ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-emerald-400 font-bold">Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Copy</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
               <div className="flex justify-between py-1.5 border-b border-slate-800">
                 <span className="text-slate-400">Account Authorization ID:</span>
                 <span className="text-[#FFA000] font-bold">{credentialModalClient.accountNumber}</span>
               </div>
               <div className="flex justify-between py-1.5 border-b border-slate-800">
-                <span className="text-slate-400">Credential Architecture:</span>
-                <span className="text-emerald-400">Argon2id Hash + PBKDF2 Salted</span>
+                <span className="text-slate-400">Approval State:</span>
+                <span className={`font-bold ${credentialModalClient.approvalStatus === 'APPROVED' ? 'text-emerald-400' : credentialModalClient.approvalStatus === 'PENDING_APPROVAL' ? 'text-amber-400' : 'text-rose-400'}`}>
+                  {credentialModalClient.approvalStatus}
+                </span>
               </div>
               <div className="flex justify-between py-1.5 border-b border-slate-800">
                 <span className="text-slate-400">Telephone / 2FA Contact:</span>
                 <span className="text-slate-200">{credentialModalClient.phone || 'Verified on file'}</span>
-              </div>
-              <div className="flex justify-between py-1.5 border-b border-slate-800">
-                <span className="text-slate-400">Approval State:</span>
-                <span className="text-emerald-400 font-bold">{credentialModalClient.approvalStatus}</span>
               </div>
               <div className="flex justify-between py-1.5">
                 <span className="text-slate-400">Assigned Account Manager:</span>
@@ -491,35 +600,77 @@ export const AdminClients: React.FC = () => {
               </div>
             </div>
 
-            {/* Temporary Token Generation for Client Access */}
+            {/* Direct Admin Credential Update / Override */}
             <div className="p-4 bg-[#0F1626] border border-amber-900/50 rounded-xl space-y-3">
-              <div className="flex items-center justify-between">
+              <div>
                 <span className="text-xs font-bold text-white flex items-center gap-1.5">
                   <Lock className="w-3.5 h-3.5 text-[#FFA000]" />
-                  <span>Temporary Access Token / Password Reset</span>
+                  <span>Update or Change Client Password</span>
                 </span>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Set a new password for {credentialModalClient.name}. This is instantly saved to the database and will work on any device.
+                </p>
+              </div>
+
+              <form onSubmit={handleSaveCustomPassword} className="space-y-2.5">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={customPasswordInput}
+                    onChange={(e) => setCustomPasswordInput(e.target.value)}
+                    placeholder="Enter new custom password..."
+                    className="flex-1 bg-[#080B11] border border-slate-800 text-white px-3 py-2 rounded-xl text-xs font-mono focus:border-[#FFA000] focus:outline-hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const rand = `SEC-${Math.floor(100000 + Math.random() * 900000)}`;
+                      setCustomPasswordInput(rand);
+                    }}
+                    className="px-2.5 py-2 bg-[#1A2338] hover:bg-[#253350] border border-slate-700 text-slate-300 rounded-xl text-xs font-mono transition-colors cursor-pointer"
+                    title="Generate random password"
+                  >
+                    Random
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!customPasswordInput.trim()}
+                    className="px-4 py-2 bg-[#FFA000] hover:bg-[#FFB300] disabled:opacity-40 text-black font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Save Password</span>
+                  </button>
+                </div>
+
+                {credentialSavedMessage && (
+                  <div className="p-2.5 bg-emerald-950/70 border border-emerald-600/60 rounded-lg text-emerald-300 text-xs font-mono flex items-center gap-2">
+                    <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>{credentialSavedMessage}</span>
+                  </div>
+                )}
+              </form>
+
+              {/* Temporary Token Quick Action */}
+              <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs font-mono">
+                <span className="text-slate-400 text-[11px]">Need automated one-click reset?</span>
                 <button
                   type="button"
                   onClick={() => handleGenerateTemporaryToken(credentialModalClient.id)}
-                  className="px-2.5 py-1 bg-[#FFA000] hover:bg-[#FFB300] text-black font-bold text-[10px] rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                  className="px-2.5 py-1 bg-[#1A2338] hover:bg-[#253350] text-[#FFA000] border border-amber-900/40 font-bold text-[10px] rounded-lg transition-colors cursor-pointer flex items-center gap-1"
                 >
                   <RefreshCw className="w-3 h-3" />
-                  <span>Generate Token</span>
+                  <span>Generate Temporary Key</span>
                 </button>
               </div>
 
-              {temporaryToken ? (
+              {temporaryToken && (
                 <div className="p-3 bg-[#080B11] border border-emerald-800/80 rounded-lg text-xs font-mono space-y-1">
-                  <div className="text-[10px] text-emerald-400 font-bold uppercase">Active Temporary Password:</div>
+                  <div className="text-[10px] text-emerald-400 font-bold uppercase">Active Temporary Key:</div>
                   <div className="text-white font-bold text-sm tracking-wider select-all">{temporaryToken}</div>
                   <div className="text-[10px] text-slate-400 font-sans">
-                    Provide this temporary credential to {credentialModalClient.name} for immediate access.
+                    This temporary key is now valid on all devices for {credentialModalClient.name}.
                   </div>
                 </div>
-              ) : (
-                <p className="text-[11px] text-slate-400 leading-normal">
-                  In compliance with cybersecurity standards, raw user passwords are encrypted at rest. If the client cannot sign in, click &quot;Generate Token&quot; to assign a secure temporary access key.
-                </p>
               )}
             </div>
 
@@ -589,18 +740,32 @@ export const AdminClients: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-2">
-              <button
-                onClick={() => {
-                  const target = selectedClient;
-                  setSelectedClient(null);
-                  handleOpenBalanceModal(target);
-                }}
-                className="py-2 px-3 bg-[#FFA000] hover:bg-[#FFB300] text-black font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <DollarSign className="w-3.5 h-3.5" />
-                <span>Adjust Balance</span>
-              </button>
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const target = selectedClient;
+                    setSelectedClient(null);
+                    handleOpenBalanceModal(target);
+                  }}
+                  className="py-2 px-3 bg-[#FFA000] hover:bg-[#FFB300] text-black font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <DollarSign className="w-3.5 h-3.5" />
+                  <span>Adjust Balance</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    const target = selectedClient;
+                    setSelectedClient(null);
+                    handleOpenCredentials(target);
+                  }}
+                  className="py-2 px-3 bg-[#111827] hover:bg-[#1E293B] border border-slate-700 text-slate-200 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Key className="w-3.5 h-3.5 text-[#FFA000]" />
+                  <span>View Credentials</span>
+                </button>
+              </div>
 
               <button
                 onClick={() => setSelectedClient(null)}

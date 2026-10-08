@@ -17,6 +17,8 @@ import {
   Menu,
   X,
   ExternalLink,
+  Newspaper,
+  ArrowDownToLine,
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -30,15 +32,18 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
     user,
     setCurrentRole,
     ashleyMessages,
+    setNotificationModalOpen,
+    unreadNotificationsCount,
+    setWithdrawalModalOpen,
   } = useApp();
 
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard Overview', icon: LayoutDashboard },
     { id: 'portfolio', label: 'Portfolio & Assets', icon: PieChart },
     { id: 'transactions', label: 'Transaction Ledger', icon: Receipt },
+    { id: 'crypto-news', label: 'News & Insights', icon: Newspaper },
     { id: 'documents', label: 'Statements & Reports', icon: FileText },
     { id: 'account-manager', label: 'Account Manager', icon: UserCheck, highlight: true },
     { id: 'support', label: 'Support Center', icon: Headphones },
@@ -197,43 +202,33 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
             </div>
 
             {/* Top Header Right Controls */}
-            <div className="flex items-center gap-3">
-              {/* Notifications Toggle */}
-              <div className="relative">
-                <button
-                  onClick={() => setNotificationsOpen(!notificationsOpen)}
-                  className="p-2 text-slate-400 hover:text-white rounded-md bg-[#111827] border border-slate-800 relative cursor-pointer"
-                  aria-label="Notifications"
-                >
-                  <Bell className="w-4 h-4" />
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#FFA000]" />
-                </button>
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              {/* Quick Withdrawal Button */}
+              <button
+                onClick={() => setWithdrawalModalOpen(true)}
+                className="px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-slate-200 hover:text-white bg-[#111827] hover:bg-[#1E293B] border border-slate-700 hover:border-[#FFA000]/60 rounded-md transition-colors flex items-center gap-1.5 cursor-pointer"
+                title="Initiate Withdrawal Request"
+              >
+                <ArrowDownToLine className="w-3.5 h-3.5 text-[#FFA000]" />
+                <span className="hidden sm:inline">Withdraw</span>
+              </button>
 
-                {notificationsOpen && (
-                  <div className="absolute right-0 mt-2 w-80 bg-[#0B0F19] border border-slate-800 rounded-lg shadow-2xl p-4 text-xs z-50 space-y-3">
-                    <div className="font-bold text-white flex items-center justify-between border-b border-slate-800 pb-2">
-                      <span>Verified System Alerts</span>
-                      <span className="text-[10px] font-mono text-[#FFA000]">3 NEW</span>
-                    </div>
-                    <div className="space-y-2.5">
-                      <div className="p-2 bg-[#080B11] rounded border border-slate-800/80">
-                        <div className="font-semibold text-slate-200">Ashley Elvira sent a message</div>
-                        <div className="text-[11px] text-slate-400 truncate">
-                          "I have reviewed your current 51.5% BTC and 33.3% ETH exposure..."
-                        </div>
-                      </div>
-                      <div className="p-2 bg-[#080B11] rounded border border-slate-800/80">
-                        <div className="font-semibold text-slate-200">Wire Inbound Executed</div>
-                        <div className="text-[11px] text-slate-400">Ref #CHI-TX-99824 credited ($25,000.00 USD)</div>
-                      </div>
-                      <div className="p-2 bg-[#080B11] rounded border border-slate-800/80">
-                        <div className="font-semibold text-slate-200">Q3 Macro Intelligence Published</div>
-                        <div className="text-[11px] text-slate-400">Research memorandums available in Documents</div>
-                      </div>
-                    </div>
-                  </div>
+              {/* Notifications Toggle */}
+              <button
+                onClick={() => setNotificationModalOpen(true)}
+                className="p-2 text-slate-400 hover:text-white rounded-md bg-[#111827] border border-slate-800 relative cursor-pointer"
+                aria-label="Open Notifications"
+                title="System Notifications"
+              >
+                <Bell className="w-4 h-4" />
+                {unreadNotificationsCount > 0 ? (
+                  <span className="absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full text-[9px] font-mono font-bold bg-[#FFA000] text-black">
+                    {unreadNotificationsCount}
+                  </span>
+                ) : (
+                  <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-slate-600" />
                 )}
-              </div>
+              </button>
 
               {/* Direct Ashley Contact Quick Button */}
               <button

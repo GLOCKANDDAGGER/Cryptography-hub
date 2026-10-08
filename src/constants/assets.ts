@@ -9,20 +9,38 @@ export const COMPANY_DETAILS = {
   name: 'Crypto Hub Investments',
   tagline: 'Digital Assets. Intelligent Strategies. Responsible Growth.',
   location: 'Massachusetts, United States',
-  primaryEmail: 'CryptoHubinvestments@outlook.com',
+  primaryEmail: 'cryptohubinvestments@hotmail.com',
+  companyEmail: 'cryptohubinvestments@hotmail.com',
   customerCareEmail: 'myhelpsdesk@outlook.com',
+  minInvestmentAmount: 250,
+  minWithdrawalAmount: 500,
+  activePromoCode: 'CRYPTOHUB26',
+  promoBonusAmount: 100,
   accountManager: {
     name: 'Ashley Elvira',
     role: 'Account Manager',
     specialties: ['Cryptocurrency Analyst', 'Bitcoin & Forex Account Manager'],
     experience: 'More than 7 years of trading experience',
-    email: 'ashleyelvira35@gmail.com',
+    email: 'Ashleyelvira35@gmail.com',
     telegram: '@ashleyelvira_fx',
     telegramUrl: 'https://t.me/ashleyelvira_fx',
+  },
+  officialDeposit: {
+    asset: 'Bitcoin',
+    symbol: 'BTC',
+    network: 'Bitcoin (BTC Network)',
+    address: '1Hn5EATL7UNJfkKUNfbuvdRp15KXKCYkoZ',
+    minDepositUsd: 250,
+    instructions: 'Send your investment deposit directly to our official custodial BTC address. After sending, upload your transaction screenshot and notify Lead Account Manager Ashley Elvira.',
   },
   disclaimer:
     'Digital-asset and foreign-exchange markets involve significant risk and may be highly volatile. The value of investments can rise or fall, and clients may lose some or all of their invested capital. Past performance does not guarantee future results.',
 };
+
+export const MIN_INVESTMENT_AMOUNT = 250;
+export const MIN_WITHDRAWAL_AMOUNT = 500;
+export const ACTIVE_PROMO_CODE = 'CRYPTOHUB26';
+export const PROMO_BONUS_AMOUNT = 100;
 
 export interface InvestmentPlanTier {
   id: string;

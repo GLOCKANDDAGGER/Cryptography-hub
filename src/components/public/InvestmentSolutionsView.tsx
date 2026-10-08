@@ -13,9 +13,11 @@ import {
   TrendingUp,
   Sliders,
   Copy,
+  MessageCircle,
 } from 'lucide-react';
 import { RiskBanner } from '../common/RiskBanner';
 import { COMPANY_DETAILS, ASSETS, OFFICIAL_INVESTMENT_PLANS, InvestmentPlanTier } from '../../constants/assets';
+import { AttentionInvestmentBanner } from '../common/AttentionInvestmentBanner';
 
 export const InvestmentSolutionsView: React.FC = () => {
   const { setDepositModalOpen, setSelectedDepositPlan, showNotification } = useApp();
@@ -61,48 +63,8 @@ export const InvestmentSolutionsView: React.FC = () => {
           </p>
         </div>
 
-        {/* Deposit Instruction & Account Manager Callout */}
-        <div className="p-6 bg-[#0B111E] border border-amber-800/60 rounded-2xl flex flex-col lg:flex-row items-center justify-between gap-6 shadow-2xl">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-[#FFA000] shrink-0">
-              <img
-                src={ASSETS.ashleyElviraPortrait}
-                alt={COMPANY_DETAILS.accountManager.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="space-y-1">
-              <div className="text-xs font-mono text-[#FFA000] uppercase font-bold flex items-center gap-1.5">
-                <Mail className="w-4 h-4" />
-                <span>OFFICIAL DEPOSIT COORDINATION</span>
-              </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-white">
-                Contact Ashley Elvira To Make A Deposit
-              </h2>
-              <p className="text-xs text-slate-300 leading-relaxed max-w-xl">
-                When you are ready to make your investment deposit, contact Lead Account Manager <strong>{COMPANY_DETAILS.accountManager.name}</strong> at <span className="font-mono text-[#FFA000] font-bold">{COMPANY_DETAILS.accountManager.email}</span>. Ashley coordinates verified custodial wallet addresses (BTC, ETH, USDT) and settlement receipts.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
-            <button
-              onClick={handleCopyEmail}
-              className="px-4 py-3 text-xs font-mono text-slate-200 bg-[#162033] hover:bg-[#1E2D47] border border-slate-700 rounded-xl transition-colors flex items-center gap-2 cursor-pointer"
-            >
-              <Copy className="w-4 h-4 text-[#FFA000]" />
-              <span>{copiedEmail ? 'Copied' : 'Copy Email'}</span>
-            </button>
-
-            <button
-              onClick={() => handleOpenDeposit('Silver Growth Tier')}
-              className="px-6 py-3 text-xs font-bold text-black bg-[#FFA000] hover:bg-[#FFB300] rounded-xl transition-colors flex items-center gap-2 cursor-pointer shadow-lg shadow-[#FFA000]/15"
-            >
-              <Wallet className="w-4 h-4" />
-              <span>Initiate $250 Deposit</span>
-            </button>
-          </div>
-        </div>
+        {/* Attention Notice & Direct Deposit Protocol */}
+        <AttentionInvestmentBanner />
 
         {/* Investment Plans Cards Grid (4 Tiers) */}
         <div className="space-y-4">
